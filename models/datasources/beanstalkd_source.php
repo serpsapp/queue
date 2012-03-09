@@ -114,7 +114,7 @@ class BeanstalkdSource extends DataSource {
 		$tube = null;
 		extract($options, EXTR_OVERWRITE);
 
-		if ($tube && !$this->watch($Model, $tube)) {
+		if ($tube && !$this->watch($Model, $tube, true)) {
 			return false;
 		}
 		if (!$result = $this->connection->reserve($timeout)) {
@@ -125,9 +125,23 @@ class BeanstalkdSource extends DataSource {
 		return $Model->set(array($Model->alias => $data));
 	}
 
-	function watch(&$Model, $tube) {
-		foreach ((array)$tube as $t) {
+	function watch(&$Model, $tube, $onlythese = false) {
+        $tube = (array)$tube;
+        if($onlythese) {
+            //Unwatch any watched tubes
+            $watched = $this->connection->listTubesWatched();
+            $to_watch = array_diff($tube, $watched);
+            $to_ignore = array_diff($watched, $tube);
+        } else {
+            $to_watch = $tube;
+        }
+		foreach ($to_watch as $t) {
 			if (!$this->connection->watch($t)) {
+				return false;
+			}
+		}
+		foreach ($to_ignore as $t) {
+			if (!$this->connection->ignore($t)) {
 				return false;
 			}
 		}
