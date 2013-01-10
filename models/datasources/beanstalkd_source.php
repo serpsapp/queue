@@ -130,10 +130,12 @@ class BeanstalkdSource extends DataSource {
         if($onlythese) {
             //Unwatch any watched tubes
             $watched = $this->connection->listTubesWatched();
+            if(empty($watched)) { $watched = array(); }
             $to_watch = array_diff($tube, $watched);
             $to_ignore = array_diff($watched, $tube);
         } else {
             $to_watch = $tube;
+            $to_ignore = array();
         }
 		foreach ($to_watch as $t) {
 			if (!$this->connection->watch($t)) {
