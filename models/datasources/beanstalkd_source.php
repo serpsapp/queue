@@ -2,7 +2,7 @@
 /**
  * Beanstalkd Source File
  *
- * Copyright (c) 2009 David Persson
+ * Copyright (c) 2009-2012 David Persson
  *
  * Distributed under the terms of the MIT License.
  * Redistributions of files must retain the above copyright notice.
@@ -12,7 +12,7 @@
  *
  * @package    queue
  * @subpackage queue.models.datasources
- * @copyright  2009 David Persson <davidpersson@gmx.de>
+ * @copyright  2009-2012 David Persson <davidpersson@gmx.de>
  * @license    http://www.opensource.org/licenses/mit-license.php The MIT License
  * @link       http://github.com/davidpersson/queue
  */
@@ -84,6 +84,7 @@ class BeanstalkdSource extends DataSource {
 	}
 
 	function put(&$Model, $data, $options = array()) {
+		unset($Model->data[$Model->alias]);
 		$Model->set($data);
 		$body = $Model->data[$Model->alias];
 
@@ -357,17 +358,28 @@ class BeanstalkdSource extends DataSource {
 
 	function describe($model) {
 	}
-
+/**
+ * Logs a new query. Will automatically truncate already logged so at any time
+ * there are no more than 200 messages logged.
+ *
+ * @param string $method
+ * @param array $params
+ * @return void
+ */
 	function logQuery($method, $params) {
 		$this->_queriesCnt++;
 		$this->_queriesTime += $this->took;
-		$this->_queriesLog[] = array(
+
+		if (count($this->_queriesLog) >= 200) {
+			array_shift($this->_queriesLog);
+		}
+		array_push($this->_queriesLog, array(
 			'query' => $method,
 			'error' => $this->error,
 			'took' => $this->took,
 			'affected' => 0,
 			'numRows' => 0
-		);
+		));
 	}
 
 	function lastError() {
