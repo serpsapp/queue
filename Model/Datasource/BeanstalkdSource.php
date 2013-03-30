@@ -8,7 +8,7 @@
  * Redistributions of files must retain the above copyright notice.
  *
  * PHP version 5
- * CakePHP version 1.2
+ * CakePHP version 2.x
  *
  * @package    queue
  * @subpackage queue.models.datasources
@@ -16,8 +16,8 @@
  * @license    http://www.opensource.org/licenses/mit-license.php The MIT License
  * @link       http://github.com/davidpersson/queue
  */
-App::import('Core', 'DataSource');
-require_once dirname(dirname(dirname(__FILE__))) . '/libs/beanstalk/src/Socket/Beanstalk.php';
+App::uses('Datasource', 'Model/Datasource');
+App::uses('BeanstalkdSocket', 'Queue.Lib');
 
 /**
  * Beanstalkd Source Class
@@ -38,6 +38,20 @@ class BeanstalkdSource extends DataSource {
 	var $__insertID;
 
 /**
+ * Start quote to avoid notice
+ *
+ * @var string
+ */
+	public $startQuote = "`";
+
+/**
+ * End quote to avoid notice
+ *
+ * @var string
+ */
+	public $endQuote = "`";
+
+/**
  * The default configuration of a specific DataSource
  *
  * @var array
@@ -55,7 +69,7 @@ class BeanstalkdSource extends DataSource {
 		parent::__construct();
 		$this->setConfig($config);
 		$this->fullDebug = Configure::read('debug') > 1;
-		$this->connection = new Socket_Beanstalk($this->config);
+		$this->connection = new BeanstalkdSocket($this->config);
 		$this->connected =& $this->connection->connected;
 		$this->connect();
 	}
@@ -68,8 +82,7 @@ class BeanstalkdSource extends DataSource {
 
 	function connect() {
 		if (!$this->connection->connect()) {
-			$error = $this->lastError();
-			trigger_error("BeanstalkdSource - Could not connect. Error given was '{$error}'.", E_USER_WARNING);
+			throw new \InternalErrorException(__d('queue', 'Could not connect. Error given was "%s"', $this->lastError()));
 			return false;
 		}
 		return true;
@@ -144,6 +157,15 @@ class BeanstalkdSource extends DataSource {
 			}
 		}
 		foreach ($to_ignore as $t) {
+			if (!$this->connection->ignore($t)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	function ignore(&$Model, $tube) {
+		foreach ((array)$tube as $t) {
 			if (!$this->connection->ignore($t)) {
 				return false;
 			}
@@ -288,6 +310,7 @@ class BeanstalkdSource extends DataSource {
 			case 'kick':
 			case 'peek':
 			case 'next':
+			case 'ignore':
 			case 'statistics':
 				$result = $this->dispatchMethod($method, $params);
 				$this->took = microtime(true) - $startQuery;
@@ -305,11 +328,12 @@ class BeanstalkdSource extends DataSource {
 	}
 
 	function read(&$Model, $queryData = array()) {
-		if ($queryData['fields'] == 'count') {
+        //TODO: Fix this instead of just commenting it out?
+		//if ($queryData['fields'] == 'count') { // not working anymore in 2.0
 			if ($this->peek($Model, $queryData['conditions']['Job.id'])) {
 				return array(0 => array(0 => array('count' => 1)));
 			}
-		}
+		//}
 		return false;
 	}
 

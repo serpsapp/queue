@@ -8,7 +8,7 @@
  * Redistributions of files must retain the above copyright notice.
  *
  * PHP version 5
- * CakePHP version 1.2
+ * CakePHP version 2.x
  *
  * @package    queue
  * @subpackage queue.models
@@ -17,15 +17,14 @@
  * @link       http://github.com/davidpersson/queue
  */
 
-App::import('Core', 'ConnectionManager');
-
 /**
  * Job Model Class
  *
  * @package    queue
  * @subpackage queue.models
  */
-class Job extends QueueAppModel {
+App::uses('Model', 'Model');
+class Job extends Model {
 
 /**
  * Database configuration to use. Before using this model be sure to
@@ -36,8 +35,11 @@ class Job extends QueueAppModel {
  * }}}
  *
  * @var string
+ * @access public
  */
-	var $useDbConfig = 'queue';
+	public $useDbConfig = 'queue';
+	public $useTable = false;
+	protected $_schema = array();
 
 /**
  * Check to see if queue is online and accepts jobs.
