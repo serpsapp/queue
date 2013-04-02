@@ -65,4 +65,14 @@
   3. Start the included debug worker.
      $ cake queue
 
+  Other notes
+  -----
+  The stream_get_line function is bugged in PHP 5.3.10, which is unfortunately
+  the version that Ubuntu 12.04 LTS ships with.
+  This function is used in the _read() function of Lib/BeanstalkdSocket.php,
+  so as a workaround you can replace that line with these:
+  {{{
+      $data = fgets($this->_connection, 16384);
+      $packet = rtrim($data, "\r\n");
+  }}}
 

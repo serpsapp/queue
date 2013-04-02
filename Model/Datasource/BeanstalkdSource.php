@@ -97,6 +97,7 @@ class BeanstalkdSource extends DataSource {
 	}
 
 	function put(&$Model, $data, $options = array()) {
+		//TODO: Investigate this, seems awkward
 		unset($Model->data[$Model->alias]);
 		$Model->set($data);
 		$body = $Model->data[$Model->alias];

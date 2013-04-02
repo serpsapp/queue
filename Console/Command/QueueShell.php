@@ -97,7 +97,7 @@ class QueueShell extends Shell {
 		$name = Inflector::camelize($name);
 
 		if (!isset($this->{$name})) {
-			$this->tasks[] = 'Queue.' . $name;
+			$this->tasks[] = $name;
 			$this->loadTasks();
 			$this->{$name}->initialize();
 		}
