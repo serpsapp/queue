@@ -129,7 +129,7 @@ class BeanstalkdSource extends DataSource {
 		$tube = null;
 		extract($options, EXTR_OVERWRITE);
 
-		if ($tube && !$this->watch($Model, $tube, true)) {
+		if ($tube && !$this->watch($Model, $tube)) {
 			return false;
 		}
 		if (!$result = $this->connection->reserve($timeout)) {
@@ -141,24 +141,8 @@ class BeanstalkdSource extends DataSource {
 	}
 
 	function watch(&$Model, $tube, $onlythese = false) {
-        $tube = (array)$tube;
-        if($onlythese) {
-            //Unwatch any watched tubes
-            $watched = $this->connection->listTubesWatched();
-            if(empty($watched)) { $watched = array(); }
-            $to_watch = array_diff($tube, $watched);
-            $to_ignore = array_diff($watched, $tube);
-        } else {
-            $to_watch = $tube;
-            $to_ignore = array();
-        }
-		foreach ($to_watch as $t) {
+		foreach ((array)$tube as $t) {
 			if (!$this->connection->watch($t)) {
-				return false;
-			}
-		}
-		foreach ($to_ignore as $t) {
-			if (!$this->connection->ignore($t)) {
 				return false;
 			}
 		}
@@ -172,6 +156,15 @@ class BeanstalkdSource extends DataSource {
 			}
 		}
 		return true;
+	}
+
+	function watch_only(&$Model, $tube) {
+		//Unwatch any watched tubes
+		$watched = $this->connection->listTubesWatched();
+		if(empty($watched)) { $watched = array(); }
+
+		$this->watch(array_diff($tube, $watched));
+		$this->ignore(array_diff($watched, $tube));
 	}
 
 	function release(&$Model, $options = array()) {
