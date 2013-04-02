@@ -52,6 +52,33 @@ class BeanstalkdSource extends DataSource {
 	public $endQuote = "`";
 
 /**
+ * _queriesLog 
+ * An array to hold queries to log
+ * 
+ * @var array
+ * @access private
+ */
+	private $_queriesLog = array();
+
+/**
+ * _queriesCnt 
+ * Number of queries logged
+ * 
+ * @var float
+ * @access private
+ */
+	private $_queriesCnt = 0;
+
+/**
+ * _queriesTime 
+ * Total time taken by queries
+ * 
+ * @var float
+ * @access private
+ */
+	private $_queriesTime = 0;
+
+/**
  * The default configuration of a specific DataSource
  *
  * @var array
@@ -140,7 +167,7 @@ class BeanstalkdSource extends DataSource {
 		return $Model->set(array($Model->alias => $data));
 	}
 
-	function watch(&$Model, $tube, $onlythese = false) {
+	function watch(&$Model, $tube) {
 		foreach ((array)$tube as $t) {
 			if (!$this->connection->watch($t)) {
 				return false;
@@ -163,8 +190,8 @@ class BeanstalkdSource extends DataSource {
 		$watched = $this->connection->listTubesWatched();
 		if(empty($watched)) { $watched = array(); }
 
-		$this->watch(array_diff($tube, $watched));
-		$this->ignore(array_diff($watched, $tube));
+		$this->watch($Model, array_diff($tube, $watched));
+		$this->ignore($Model, array_diff($watched, $tube));
 	}
 
 	function release(&$Model, $options = array()) {
@@ -305,6 +332,7 @@ class BeanstalkdSource extends DataSource {
 			case 'peek':
 			case 'next':
 			case 'ignore':
+			case 'watch_only':
 			case 'statistics':
 				$result = $this->dispatchMethod($method, $params);
 				$this->took = microtime(true) - $startQuery;
@@ -312,7 +340,7 @@ class BeanstalkdSource extends DataSource {
 				$this->logQuery($method, $params);
 				return $result;
 			default:
-				trigger_error("BeanstalkdSource::query - Unkown method {$method}.", E_USER_WARNING);
+				throw new \InternalErrorException(__d('queue', 'BeanstalkdSource::query - Unkown method %s.', $method));
 				return false;
 		}
 	}
