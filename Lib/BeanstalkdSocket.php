@@ -212,7 +212,9 @@ class BeanstalkdSocket {
 			}
 			$packet = rtrim($data, "\r\n");
 		} else {
-			$packet = stream_get_line($this->_connection, 16384, "\r\n");
+			$data = fgets($this->_connection, 16384);
+			$packet = rtrim($data, "\r\n");
+			//$packet = stream_get_line($this->_connection, 16384, "\r\n");
 		}
 		return $packet;
 	}
