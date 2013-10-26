@@ -345,11 +345,11 @@ class BeanstalkdSource extends DataSource {
 		}
 	}
 
-	function create(&$Model, $fields = null, $values = null) {
+	function create(Model $Model, $fields = null, $values = null) {
 		return false;
 	}
 
-	function read(&$Model, $queryData = array()) {
+	function read(Model $Model, $queryData = array(), $recursive = null) {
         //TODO: Fix this instead of just commenting it out?
 		//if ($queryData['fields'] == 'count') { // not working anymore in 2.0
 			if ($this->peek($Model, $queryData['conditions']['Job.id'])) {
@@ -359,7 +359,7 @@ class BeanstalkdSource extends DataSource {
 		return false;
 	}
 
-	function update(&$Model, $fields = null, $values = null) {
+	function update(Model $Model, $fields = null, $values = null, $conditions = null) {
 		return false;
 	}
 
@@ -369,7 +369,7 @@ class BeanstalkdSource extends DataSource {
  * @param Model $Model
  * @param mixed $id
  */
-	function delete(&$Model, $id = null) {
+	function delete(Model $Model, $id = null) {
 		if ($id == null) {
 			$id = $Model->id;
 		} elseif (is_array($id)) {
@@ -429,7 +429,8 @@ class BeanstalkdSource extends DataSource {
 	}
 
 	function lastError() {
-		return array_pop($this->connection->errors());
+		$all_errors = $this->connection->errors();
+		return array_pop($all_errors);
 	}
 
 /**
