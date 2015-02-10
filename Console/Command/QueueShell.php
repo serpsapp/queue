@@ -146,5 +146,15 @@ class QueueShell extends Shell {
 		$this->out("\t<tubes>\n\t\tComma separated list of tubes to watch.");
 		$this->out('');
 	}
+
+    // TODO: Reevaluate this organizing of things...
+    public function getOptionParser() {
+        $parser = parent::getOptionParser();
+        $parser->addOption('server', array(
+            'help' => 'An alternate beanstalkd server to send these jobs to',
+            'default' => null,
+        ));
+        return $parser;
+    }
 }
 ?>
