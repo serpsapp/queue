@@ -203,7 +203,7 @@ class BeanstalkdSocket {
 			if (feof($this->_connection)) {
 				return false;
 			}
-			$data = fread($this->_connection, $length + 2);
+			$data = stream_get_contents($this->_connection, $length + 2);
 			$meta = stream_get_meta_data($this->_connection);
 
 			if ($meta['timed_out']) {
