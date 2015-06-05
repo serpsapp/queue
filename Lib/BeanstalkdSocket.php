@@ -246,8 +246,8 @@ class BeanstalkdSocket {
 	 *         the job id.
 	 */
 	public function put($pri, $delay, $ttr, $data) {
-		if (!$this->_write(sprintf('put %d %d %d %d', $pri, $delay, $ttr, strlen($data)))) return false;
-		if (!$this->_write($data)) return false;
+		if (!$this->_write(sprintf("put %d %d %d %d\r\n%s", $pri, $delay, $ttr, strlen($data),$data))) return false;
+
 		$status = strtok($this->_read(), ' ');
 
 		switch ($status) {
