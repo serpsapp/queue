@@ -101,6 +101,19 @@ class QueueShell extends Shell {
 			$this->loadTasks();
 			$this->{$name}->initialize();
 		}
+        $subparser = $this->{$name}->getOptionParser();
+        $suboptions = array();
+        if (isset($this->params['options'])) {
+          $suboptions = explode(" ", $this->params['options']);
+        }
+        try {
+          list($subparams, $subargs) = $subparser->parse($suboptions, $name);
+          $this->params = array_merge($this->params, $subparams);
+        } catch (ConsoleException $e) {
+          $this->out("Unknown --option value. Vaild Options:");
+          $this->out($this->OptionParser->help($name));
+          return false;
+        }
 		return $this->{$name}->execute();
 	}
 
@@ -154,6 +167,12 @@ class QueueShell extends Shell {
             'help' => 'An alternate beanstalkd server to send these jobs to',
             'default' => null,
         ));
+        $parser->addOption('options', array(
+            'short' => 'o',
+            'help' => 'String of space-separated options to pass to the command.',
+            'default' => null,
+        ));
+
         return $parser;
     }
 }
