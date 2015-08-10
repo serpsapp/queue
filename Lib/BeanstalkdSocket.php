@@ -68,6 +68,16 @@ class BeanstalkdSocket {
 	protected $_tube = null;
 
 	/**
+	 * FIFO of callbacks for consecutive put_async calls
+	 */
+	protected $_callbacks = array();
+
+	/**
+	 * FIFO of jobs associated with callbacks
+	 */
+	protected $_jobs = array();
+
+	/**
 	 * Constructor.
 	 *
 	 * @param array $config An array of configuration values:
@@ -143,6 +153,7 @@ class BeanstalkdSocket {
 	 * @return boolean `true` if diconnecting was successful.
 	 */
 	public function disconnect() {
+		$this->drain();
 		if (!is_resource($this->_connection)) {
 			$this->connected = false;
 		} else {
@@ -265,6 +276,84 @@ class BeanstalkdSocket {
 			default:
 				$this->_error($status);
 				return false;
+		}
+	}
+
+	/**
+	 * The `put_async` is for high-throughput producers who do not immediately
+	 * need the job ID.
+	 *
+	 * This does not currently interoperate with put(), so you should not mix
+	 * async and sync calls, or the results are undefined.
+	 *
+	 * The results, if not available immediately, will be checked on the next
+	 * invocation of put_async() or on the next call to poll().
+	 *
+	 * @param $callback an optional function to be called with the id of the
+	 * job when it is known, or with false if an error occurred.
+	 * @return true iff the write succeeded.
+	 */
+	public function put_async($pri, $delay, $ttr, $data, $callback) {
+		if (!$this->_write(sprintf("put %d %d %d %d\r\n%s", $pri, $delay, $ttr, strlen($data),$data))) return false;
+		array_push($this->_callbacks, $callback);
+		array_push($this->_jobs, $data);
+		$this->poll();
+		return true;
+	}
+
+	/**
+	 * Polls the connection for responses from a previous put_async.
+	 * If any responses are available, their callbacks will be called.
+	 *
+	 * @param blocking if true, block for just one callback and service it.  if
+	 * false, do not block, but service all callbacks which may be available.
+	 * @return true if any callbacks were serviced
+	 */
+	public function poll($blocking = false) {
+		stream_set_blocking($this->_connection, $blocking);
+		$ret = false;
+		$loop = true;
+		while ($loop && ($line = $this->_read())) {
+			$ret = true;
+			$callback = array_shift($this->_callbacks);
+			$job = array_shift($this->_jobs);
+			if ($callback) {
+				$status = strtok($line, ' ');
+				switch ($status) {
+				case 'INSERTED':
+				case 'BURIED':
+					$jobid = (integer)strtok(' ');
+					$callback($job, $jobid);
+					break;
+				case 'EXPECTED_CRLF':
+				case 'JOB_TOO_BIG':
+				default:
+					$this->_error($status);
+					$callback($job, false);
+				}
+			}
+			$loop = !$blocking;
+		}
+		stream_set_blocking($this->_connection, true);
+		return $ret;
+	}
+
+	/**
+	 * Blocks repeatedly until all callbacks have been serviced or the
+	 * connection is closed.
+	 */
+	public function drain() {
+		while (is_resource($this->_connection) &&
+			   !feof($this->_connection) &&
+			   (count($this->_callbacks) > 0)
+			   ) {
+			$this->poll(true);
+		}
+		while (count($this->_callbacks) > 0) {
+			$callback = array_shift($this->_callbacks);
+			$job = array_shift($this->_jobs);
+			print_r("Erroring!");
+			$callback($job, false);
 		}
 	}
 

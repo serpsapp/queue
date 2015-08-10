@@ -138,13 +138,19 @@ class BeanstalkdSource extends DataSource {
 		if (!$this->choose($Model, $tube)) {
 			return false;
 		}
-		$id = $this->connection->put($priority, $delay, $ttr, $this->_encode($body));
+        if (isset($options['callback'])) {
+            return $this->connection->put_async($priority, $delay, $ttr,
+                $this->_encode($body), $options['callback']);
+        } else {
+            $id = $this->connection->put($priority, $delay, $ttr,
+                $this->_encode($body));
 
-		if ($id !== false) {
-			$Model->setInsertId($id);
-			return $this->__insertID = $Model->id = $id;
-		}
-		return false;
+            if ($id !== false) {
+                $Model->setInsertId($id);
+                return $this->__insertID = $Model->id = $id;
+            }
+            return false;
+        }
 	}
 
 	function choose(&$Model, $tube) {
