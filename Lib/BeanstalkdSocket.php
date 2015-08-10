@@ -63,6 +63,11 @@ class BeanstalkdSocket {
 	protected $_errors = array();
 
 	/**
+	 * Last tube "use"d.
+	 */
+	protected $_tube = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param array $config An array of configuration values:
@@ -127,6 +132,7 @@ class BeanstalkdSocket {
 
 		if ($this->connected) {
 			stream_set_timeout($this->_connection, -1);
+			$this->_tube = null;
 		}
 		return $this->connected;
 	}
@@ -275,6 +281,11 @@ class BeanstalkdSocket {
 	 * @return string|boolean `false` on error otherwise the name of the tube.
 	 */
 	public function choose($tube) {
+		if ($tube == $this->_tube) {
+			return $tube;
+		}
+		$this->_tube = $tube;
+
 		if (!$this->_write(sprintf('use %s', $tube))) {
 			return false;
 		}
