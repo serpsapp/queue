@@ -153,6 +153,10 @@ class BeanstalkdSource extends DataSource {
         }
 	}
 
+	function drain(&$Model) {
+		return $this->connection->drain();
+	}
+
 	function choose(&$Model, $tube) {
 		return $this->connection->choose($tube) === $tube;
 	}
@@ -327,6 +331,7 @@ class BeanstalkdSource extends DataSource {
 
 		switch ($method) {
 			case 'put':
+			case 'drain':
 			case 'choose':
 			case 'reserve':
 			case 'watch':
