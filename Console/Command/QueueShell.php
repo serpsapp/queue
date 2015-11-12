@@ -103,6 +103,9 @@ class QueueShell extends Shell {
 		}
         $subparser = $this->{$name}->getOptionParser();
         $suboptions = array();
+        if (isset($this->params['server'])) {
+            $this->out('<warning>WARNING: Using --server directly is deprecated!  Pass it in as a task option with the -o parameter instead.</warning>');
+        }
         if (isset($this->params['options'])) {
           $suboptions = explode(" ", $this->params['options']);
         }
