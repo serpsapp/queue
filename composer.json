@@ -1,0 +1,38 @@
+{
+    "name": "serpsapp/queue",
+    "type": "cakephp-plugin",
+    "description": "CakePHP plugin for interfacing with beanstalkd",
+    "keywords": [
+        "cakephp",
+        "beanstalk",
+        "beanstalkd"
+    ],
+    "homepage": "https://github.com/serpsapp/queue",
+    "authors": [
+        {
+            "name": "Joel Bradshaw",
+            "role": "Current Maintainer"
+        },
+        {
+            "name": "Adam Bliss",
+            "role": "Contributor"
+        },
+        {
+            "name": "carlipa",
+            "role": "Contributor (2.x port)"
+        },
+        {
+            "name": "David Persson",
+            "role": "Original Author"
+        }
+    ],
+    "license": "MIT",
+    "support": {
+        "source": "https://github.com/serpsapp/queue",
+        "issues": "http://github.com/serpsapp/queue/issues"
+    },
+    "require": {
+        "php": ">5.4.1",
+        "composer/installers": "*"
+    }
+}
